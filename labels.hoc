@@ -1,0 +1,34 @@
+// $Id: labels.hoc,v 1.5 1995/11/20 21:02:34 billl Exp $
+
+// external fgabaa,fgabab, fampa, fnmda, ftc, fre, fgen, mkcode
+
+//* syn types: fgabaa = 0 fgabab = 1 fampa = 2 fnmda = 3}
+func fgabaa (){return  0 }
+func fgabab (){return  1 }
+func fampa () {return  2 }
+func fnmda () {return  3 }
+func finj () {return  4 }
+
+//* cell types: ftc = 0 fre = 1 fgen = 2
+func ftc () {return  0 }
+func fre () {return  1 }
+func fgen (){return  2 }
+
+//* field types:  nrn=1, syn=3, clm=3, idx=4
+func nrn() { return 1 }  // neuron type (either RE or TC)
+func syn() { return 2 }  // synapse type (GABAA, GABAB, AMPA, NMDA)
+func clm() { return 3 }  // column number
+func idx() { return 4 }  // nrn number in the column 
+
+//* String labels by field type and name
+cdlbls[nrn()][ftc()].s = "TC"
+cdlbls[nrn()][fre()].s = "RE"
+cdlbls[syn()][fgabaa()].s = "GABAA"
+cdlbls[syn()][fgabab()].s = "GABAB"
+cdlbls[syn()][fampa()].s = "AMPA"
+cdlbls[syn()][fnmda()].s = "NMDA"
+cdlbls[syn()][finj()].s = "PULSE"
+
+// utility functions
+// plmin(val,var)
+func plmin() { return $1 + $2*(2*u_rand() - 1) } 

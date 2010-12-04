@@ -1,0 +1,197 @@
+// $Id: params.hoc,v 1.126 1995/11/29 18:38:27 billl Exp $
+
+//* General Parameters 
+celsius = 34		// temperature from Hug,jnphys71:2576,1994
+dt = 0.025
+tstop = 500
+seed = 125437
+
+v_init   = 1000          // initial voltage 
+vrestRE = -70
+vrestTC = -69
+vrange = 1  // gives +/- 5 mV
+
+v_potassium = -95	// potassium reversal potential 
+v_sodium = 50		// sodium reversal potential 
+v_calcium = 120		// calcium reversal potential 
+v_glutamate = 0 	// excitatory synaptic reversal potential 
+v_gaba = -80		// inhibitory synaptic reversal potential 
+camin	= 1e-8		// minimal intracellular concentration 
+shift = 2		// shift for screening charge 
+Rax = 100
+
+batch_flag = 0		// batch mode: 1=batch, 0=interactive 
+nstep_steprun = 10
+print_flag = 0          // necessary to avoid erasing files
+graph_flag = 0
+
+//* TC cells
+
+forsec "TC" {
+
+  insert Pass		// leak current
+  erev_Pass = 100         // to be set 
+  g_Pass = 5e-5
+
+  insert hh2              // Hodgkin-Huxley INa and IK 
+  ek = v_potassium
+  ena = v_sodium
+  vtraub_hh2 = -55
+  gnabar_hh2 = 0.03
+  gkbar_hh2 = 0.002
+
+  insert it 		// reticular IT current 
+  cai = 2.4e-4 
+  cao = 2 
+  eca = 120
+  shift_it = 2
+  gcabar_it = 0.001
+
+  insert iar		// Ih current 
+  eh=-43 
+  nexp_iar = 2
+  cac_iar = 5e-4
+  k2_iar = 4e-4
+  ghbar_iar = 1.2e-4
+
+  insert cad		// calcium pump 
+  kd_cad = 1e-4
+  kt_cad = 1e-4
+  depth_cad = 1
+  taur_cad = 1e10
+}
+
+//* RE cells
+
+forsec "RE" {
+
+  insert Pass		// leak current 
+  erev_Pass = 100         // to be set 
+  g_Pass = 5e-5
+
+  insert hh2              // Hodgkin-Huxley INa and IK 
+  ek = v_potassium
+  ena = v_sodium
+  vtraub_hh2 = -55
+  gnabar_hh2 = 0.1
+  gkbar_hh2 = 0.01
+
+  insert it2 		// reticular IT current 
+  cai = 2.4e-4 
+  cao = 2 
+  eca = 120 
+  shift_it2 = 2
+  gcabar_it2 = 0.00175
+
+  insert iahp		// slow IAHP 
+  cac_iahp = 0.025
+  beta_iahp = 0.03
+  taumin_iahp = 0.1
+  ek=v_potassium
+  gkbar_iahp = 0.005
+
+  insert ican 		// slow ICAN 
+  cac_ican = 0.01
+  beta_ican = 0.002
+  taumin_ican = 0.1
+  en=-20
+  gbar_ican = 0.00035
+
+  insert cad		// calcium pump 
+  kd_cad = 1e-4
+  kt_cad = 1e-4
+  depth_cad = 1
+  taur_cad = 1e10
+}
+
+//* Synapses
+
+//** change GABAB1 into GABAB2
+//*** old params with long cdur, little alpha
+Cdur_GABAB1    = 150
+Alpha_GABAB1   = 0.01
+Beta_GABAB1    = 0.005
+Erev_GABAB1    = -95
+Deadtime_GABAB1 = 0
+GMAX_GABAB1     = 1
+DELAY_GABAB1 = 50
+//*** new params with brief cdur, big alpha
+// Cdur_GABAB1    = 50
+// Alpha_GABAB1   = 0.05
+// Beta_GABAB1    = 0.005
+// Erev_GABAB1    = -95
+// Deadtime_GABAB1 = 0
+// GMAX_GABAB1     = 1
+// DELAY_GABAB1 = 50
+
+//** Altering GABALOW decay to simulate CZP
+// Otis and Mody, Modulation of Decay Kinetics ..., Neuroscience 49:13-32, 1992
+// Fig. 10 (p. 22)
+// alpha is so fast, cannot detect that it changes appreciably
+q10_GABALOW = 2.1
+exptemp_GABALOW = 34
+Erev_GABALOW = -85
+//*** control
+Alpha_GABALOW = 1/0.38
+Beta_GABALOW = 1/8.28
+
+q10_GABAA = 2.1
+exptemp_GABAA = 34
+Erev_GABAA = -85
+//*** control
+Alpha_GABAA = 1/0.38
+Beta_GABAA = 1/8.28
+//*** CZP
+// Alpha_GABAA = 1/0.52
+// Beta_GABAA = 1/16.31
+
+//** TC postsynaptic
+
+tmplist = new List("TC")
+
+for ii = 0,tmplist.count-1{
+  for jj = 0,tmplist.object(ii).gabaa.nsyn-1 {
+    tmplist.object(ii).gabaa.gmax(jj,0.5e-3)
+    tmplist.object(ii).gabaa.delay(jj,0.5)
+}}
+
+for ii = 0,tmplist.count-1{
+  for jj = 0,tmplist.object(ii).gabab.nsyn-1 {
+    tmplist.object(ii).gabab.gmax(jj,60e-6)
+    tmplist.object(ii).gabab.delay(jj,0.5)
+}}
+
+//** RE postsynaptic
+tmplist = new List("RE")
+
+// RE->RE
+for ii = 0,tmplist.count-1{
+  for jj = 0,tmplist.object(ii).gabaa.nsyn-1 {
+    tmplist.object(ii).gabaa.gmax(jj,plmin(140e-6,40e-6))
+    tmplist.object(ii).gabaa.delay(jj,0.5)
+  }
+// TC->RE and stim
+  for jj = 0,tmplist.object(ii).ampa.nsyn-1 { 
+    tmplist.object(ii).ampa.gmax(jj,0.5e-3)
+    tmplist.object(ii).ampa.delay(jj,0.5)
+  }
+}
+
+for ii = 0,tmplist.count-1 {  // reset the stim which is the last entry
+  jj = plmin(1,0.5)
+  tmplist.object(ii).ampa.delay(-1,jj+2.5)
+  tmplist.object(ii).gabaa.delay(-1,jj+2.5)
+  tmplist.object(ii).inj.delay(0,jj)
+  tmplist.object(ii).inj.amp = plmin(5,2)
+  tmplist.object(ii).inj.dur = plmin(0.5,0.3)
+}
+
+//** stimulation
+
+pg[0].fast_invl = 0
+pg[0].slow_invl = 20
+pg[0].burst_len = 1
+pg[0].start = 5
+pg[0].end = 10
+pg[0].noise = 0
+seed_gen = 931345

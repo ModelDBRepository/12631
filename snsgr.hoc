@@ -1,0 +1,124 @@
+// $Id: snsgr.hoc,v 1.15 1995/11/20 02:25:02 billl Exp $
+
+//* GRAPHICAL DISPLAY OF CONNECTIVITY
+
+objref snsgrlist // a list of connectivity graphs
+snsgrlist = new List()
+objectvar ind, vec
+ind = new Vector(100)
+vec = new Vector(100)
+
+symnum = 7
+colnum = 8
+objectvar cl[colnum], sym[symnum] // only 9 different symbols available
+for tempvar=0,symnum-1 { sym[tempvar]=new String() }
+for tempvar=0,colnum-1 { cl[tempvar]=new String()} 
+
+{ cl[0].s ="black"  cl[1].s ="red"  cl[2].s ="blue"  cl[3].s ="green"  cl[4].s ="orange"
+  cl[5].s ="brown"  cl[6].s ="violet"  cl[7].s ="yellow"  }
+
+{ sym[0].s = "o" sym[1].s = "t" sym[2].s = "s"  
+  sym[3].s = "O" sym[4].s = "T" sym[5].s = "S"  sym[6].s = "+"}
+
+offnum = 6
+offint = 0.15
+
+//** verge(LIST) shows divergence or convergence for syn mechs in LIST
+proc verge () { local i,cnt,dotsize
+  if (numarg()>1) { dotsize = $2 } else { dotsize = 2 }
+  cnt = $o1.count()
+  vec.resize(cnt)
+  for (i=0;i<cnt;i=i+1) {
+    vec.set(i,$o1.object(i).check)
+  }
+  graphItem = new Graph()
+  graphItem.save_name("snsgrlist.")
+  snsgrlist.append(graphItem)
+  graphItem.size(0,cnt,-1,vec.max)
+  vec.mark(graphItem,1,"o",dotsize)
+  graphItem.xaxis()
+}
+
+//** connmat(LIST,XCODEWORD,XFIELD,YCODEWORD,YFIELD,[DOTSIZE,SYMBOLS,OFFSET,LABEL])
+// shows connectivity matrix
+// eg connmat(prelist,"pre",3,"post",4)
+proc connmat () { local i, j, k, nsyn, xnum, ynum, ymin,\
+                        cdx, cdy, cdd, cde, dotsize, abc, inc, color
+  if (numarg()==0) {
+    print "connmat(LIST,XCODEWORD,XFIELD,YCODEWORD,YFIELD,[DOTSIZE,SYMBOLS,OFFSET,LABEL])"
+    print "  colors: black, red, blu, green, orange, brown, violet, yellow"
+    print "  characters: o,t,s,O,T,S,+ (circ, tri, square; CAP is filled)"
+    return
+  }
+  if (numarg()==1) {
+    if (sfunc.len(mechnames) > 0) {
+      sprint(temp_string_,"/%d/",$1)
+      sfunc.tail(mechnames,temp_string_,temp_string_)
+      sfunc.head(temp_string_,"/",temp_string_)
+      print temp_string_
+    } else if($1<tmplist.count) { print tmplist.object($1) }
+    printf("%s %s; xoff=%g, yoff=%g\n", \
+           cl[$1%colnum].s,sym[$1%symnum].s,offint*int($1/offnum),offint*($1%offnum))
+    return
+  }
+  if (numarg()>5) { dotsize = $6 } else { dotsize = 2 }
+  if (numarg()>6) { abc = $7 } else {abc = 0}
+  if (numarg()>7) { offint = $8 } else {offint = 0.15}
+  inc = xnum = ynum = ymin = 0
+  if ((cdx = connmat_findstr($s2)) == -1) { print "unknown x string" return }
+  if ((cdy = connmat_findstr($s4)) == -1) { print "unknown y string" return }
+  graphItem = new Graph()
+  if (numarg()>8) { graphItem.label($s9) }
+  graphItem.save_name("snsgrlist.")
+  sprint(temp_string_,"%s %s%d %s%d",$o1,$s2,$3,$s4,$5)
+  graphItem.label(temp_string_)
+  snsgrlist.append(graphItem)
+  print "chose/total"
+  for i=0,$o1.count-1 {
+    nsyn = $o1.object(i).nsyn
+    ind.resize(nsyn)
+    ind.fill(-1)
+    vec.resize(nsyn)
+    vec.fill(-1)
+    k = 0
+    for j=0,nsyn-1 {
+      if (cmcb($o1.object(i),j)==1) {
+        k = k + 1
+        cdd = connmat_newpt($o1.object(i),cdx,$3,j,i) + offint*int(inc/offnum)
+        cde = connmat_newpt($o1.object(i),cdy,$5,j,i) + offint*(inc%offnum)
+        if (cdd < 0 || cde < 0) {
+          continue
+        }
+        if (cdd > xnum) xnum = cdd
+        if (cde > ynum) ynum = cde
+        if (cde < ymin) ymin = cde
+        ind.set(j,cdd)
+        vec.set(j,cde)  // put in the duplicates so fill vector (else stray 0s)
+      }
+    }
+    printf("%d: %d/%d ",i,k,nsyn)
+    if (abc) {
+      color = i%8 + 1  // only 8 useable colors; 0 is white
+      vec.mark(graphItem,ind,sym[i%symnum].s,dotsize,color,3)
+    } else {
+      vec.mark(graphItem,ind,"o",dotsize)
+    }
+    inc = inc + 1
+  }
+  printf("\n")
+  for (ii=1;ii<ynum;ii=ii+1) {
+    graphItem.beginline()
+    graphItem.line(0,ii)
+    graphItem.line(xnum,ii)
+  }
+//  graphItem.size(0,xnum,ymin,ynum) // -1 means not set, -2 means empty pointer
+  graphItem.size(0,100,0,100) // -1 means not set, -2 means empty pointer
+  graphItem.xaxis()
+}
+
+// stub callback function
+// called with object ($o1) and nsyn ($2)
+// can call connmat_newpt if want to check something
+// eg if (connmat_newpt($o1,2,1,$2) != 2) { return 0 }
+//  would check field 1 of post and not permit graphing if != 2
+func cmcb () { return 1 }

@@ -1,0 +1,31 @@
+// $Id: show.hoc,v 1.1 2002/07/27 04:08:58 billl Exp $
+
+proc showfiles () { local cnt
+
+  read_vfile(1,$s1)
+  panobj.color=1
+  panobj.line=1
+  rmtray(1)
+  read_vfile(2,$s2)
+  panobj.color=2
+  panobj.line=7
+
+  disptray(1,9)
+  boxerl.object(0).name="All cells: top 2 rows RE cells; rest are TC cells"
+  grall(2,0,63,1)
+
+  mktray(1,4,1,500,100)
+  boxerl.object(1).name="Fig 4: representative TC cells -- 500 ms"
+  grall(1,27,54,1,63,1,9)
+  grall(2,27,54,1,63,1,9)
+  cnt=panobjl.object(1).glist.count
+  for ltr(XO,panobjl.object(1).glist) if (i1>cnt-5) XO.size(0,500,-82,-67)
+
+  mktray(1,3,1,500,100)
+  boxerl.object(2).name="Fig 3: representative RE cells -- first 100 ms"
+  grall(1,11,13,1,67,1,1)
+  grall(2,11,13,1,67,1,1)
+  setrange(1,-3)
+  cnt=panobjl.object(1).glist.count
+  for ltr(XO,panobjl.object(1).glist) if (i1>cnt-4) XO.size(0,100,-90,30)
+}

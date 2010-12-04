@@ -1,0 +1,79 @@
+// $Id: geom.hoc,v 1.30 1995/10/05 23:57:16 billl Exp $
+
+//* RE Cell
+
+begintemplate RE
+  public soma
+  public nmda, ampa, gabaa, gabab, p, inhib, excit, inj
+  public up
+  external fgabaa,fgabab, fampa, fnmda, ftc, fre, finj, fgen, mkcode
+  objectvar nmda, ampa, gabaa, gabab, p, inhib, excit, inj
+  objref this,up
+
+  create soma
+
+  proc init() { 
+    col = $1 prenum = $2 num = $3
+    soma {diam = 10   L = 31.831}
+    access soma
+    // type, col, pre0, tier
+    p = new PRESYN(0.5,mkcode(fre(),prenum,col,num))
+
+    gabaa = new GABAA(0.5,mkcode(fre(),fgabaa(),col,num))
+    ampa = new AMPA(0.5,mkcode(fre(),fampa(),col,num))
+    inhib = new POSTSYN(gabaa)
+    excit = new POSTSYN(ampa)
+    inj   = new PULSE(0.5,mkcode(fre(),finj(),col,num),1)
+  }
+
+endtemplate RE
+
+//* TC Cell
+begintemplate TC
+  public soma
+  public nmda, ampa, gabaa, gabab, p, inhib, excit
+  public up
+  external fgabaa,fgabab, fampa, fnmda, ftc, fre, fgen, mkcode
+  objectvar nmda, ampa, gabaa, gabab, p, inhib, excit
+  objref this,up
+
+  create soma
+
+  proc init() { 
+    col = $1 prenum = $2 num = $3
+    soma { diam = 10  L = 31.831 } // such that surface = 1000 um2
+    access soma
+    // type, col, pre0, tier
+    p = new PRESYN(0.5,mkcode(ftc(),prenum,col,num))
+
+    gabaa = new GABALOW(0.5,mkcode(ftc(),fgabaa(),col,num))  
+    gabab = new GABAB1(0.5,mkcode(ftc(),fgabab(),col,num))   
+    // type, col, pre0, tier
+    inhib = new POSTSYN(gabaa,gabab)
+  }
+
+endtemplate TC
+
+//* Defining Thalamic Column
+begintemplate COL
+  public re, tc, repre, tcpre, numtc, numre, col, up
+  public tcprelist, reprelist
+  external fgabaa,fgabab, fampa, fnmda, ftc, fre, fgen
+  objref this,up
+
+  objref re[1]
+  objref tc[1]
+
+  proc init() { 
+    col = $1 numre = $2 numtc = $3 repre = $4
+    tcpre = repre + numre
+
+    objectvar re[numre], tc[numtc]
+    for i=0,numre-1 { re[i] = new RE(col,repre+i,i) }
+    for i=0,numtc-1 { tc[i] = new TC(col,tcpre+i,i) }
+  }
+
+  proc tcprelist () { for i=0,numtc-1 { $o1.append(tc[i].p) } }
+  proc reprelist () { for i=0,numre-1 { $o1.append(re[i].p) } }
+
+endtemplate COL

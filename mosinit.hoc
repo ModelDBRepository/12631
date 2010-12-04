@@ -1,0 +1,24 @@
+load_file("nrngui.hoc")
+/*
+All files, except this one, are "as is" from Bill Lytton. In particular,
+when the simulation is launched by loading the init.hoc file, they
+use some commands which are linux specific such as "grep -a".
+To launch init.hoc or disp.hoc on other machines one may have
+to change the lines in those files which read:
+
+uname = "i586"
+osname = "Linux"
+
+The original files came in a compressed archive,
+95nov29.tar.gz, which expanded into a directory named,
+batch95nov29.01
+*/
+
+strdef grep
+if (execute("load_file(\"disp.hoc\")") == 0) {
+	print "Try again with no -a option to grep (but still won't work on mac)"
+	grep = "grep"
+	showfiles("ctl.dat", "czp.dat")
+}
+
+

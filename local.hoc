@@ -1,0 +1,129 @@
+//  $Header: /u/billl/nrniv/tcre/RCS/local.hoc,v 1.3 2002/07/23 15:20:16 billl Exp $
+//
+//  This file contains local modifications to nrnoc.hoc and default.hoc
+//
+//  Users should not edit nrnoc.hoc or default.hoc.  Any local 
+//  changes to these files should be made in this file.
+
+// ------------------------------------------------------------
+//* MODIFICATIONS TO NRNOC.HOC
+// The procedures declared here will overwrite any duplicate
+// procedures in nrnoc.hoc.
+// ------------------------------------------------------------
+
+print "WARNING: local local.hoc $Id: local.hoc,v 1.3 2002/07/23 15:20:16 billl Exp $"
+
+//** proc initMech: initialization of mechanism variables
+proc initMech() { // Initialization of mechanism variables 
+     // NOTE: if any changes are made to the NEURON block of any local mod
+     //       file, the user must add the necessary inits to initMisc1() 
+
+   // Range variables 
+
+    forall {
+      if (ismembrane("na_ion")) { 
+        nai = na_init
+        nai0_na_ion = na_init
+      }
+      
+      if (ismembrane("k_ion")) {
+        ki = k_init
+        ki0_k_ion = k_init
+      }
+      
+      if (ismembrane("ca_ion")) { 
+        cai = ca_init
+        cai0_ca_ion = ca_init
+      }
+
+    }
+}
+
+strdef secnm
+secnm = "XXXX"
+func setother() {}
+//** proc setMemb
+proc setMemb() { local isum, aca, prevwarn
+  prevwarn = 1e10 // flag for previous warning given
+
+  forall {
+    isum = 0.0
+    if (ismembrane("Pass")) {
+      if (ismembrane("na_ion"))   { isum = isum + ina   }
+      if (ismembrane("k_ion"))    { isum = isum + ik    }
+      if (ismembrane("ca_ion"))   { isum = isum + ica   }
+      if (ismembrane("other_ion")){ isum = isum + iother}
+      isum += setother()
+      
+      ifsec secnm print isum
+      if (isum == 0) { /* passive cmp so set erev = vrest */
+        erev_Pass = v
+      } else {
+        /* assume that g has been set and determine erev */
+        if (g_Pass > 0) {
+          erev_Pass = v + isum/g_Pass 
+        } else {
+          if (erev_Pass != v) { 
+            g_Pass = isum/(erev_Pass - v) 
+          }
+        }
+      }
+      
+      /* pick out the screw ups */
+      if (g_Pass <= 0) {
+        sectionname(section)
+        printf("ERROR: bad g (%g) in segment %s.\n",g_Pass, section)  }
+        if ((erev_Pass < -100 || erev_Pass > -50) && erev_Pass!=prevwarn) {
+          sectionname(section)
+          // printf("WARNING: erev (%g) out of bounds in segment %s.\n",erev_Pass, section) 
+          prevwarn = erev_Pass }
+    }
+    /* Alain's M-M pump */
+    if (ismembrane("cad")) {
+      kd_cad = cai*(-(cai * depth_cad *FARADAY) + cainf_cad * depth_cad * FARADAY - \
+                    5000*ica*taur_cad - depth_cad * FARADAY*kt_cad * taur_cad)
+      kd_cad = kd_cad/(cai*depth_cad*FARADAY - cainf_cad * depth_cad * FARADAY + \
+                       5000*ica*taur_cad)
+    }
+    /* handle ca using cadecay */
+    if (ismembrane("cadecay")) {
+      k0_cadecay = ica
+    }
+    if (ismembrane("cadxp")) { 
+      /* steady state : aca=pumpca/pump */
+      icaex_cadxp = 0.0 /* temporary to compare with old neuron */
+      aca = (k4_cadxp*cao + k1_cadxp*cai)/(k2_cadxp + k3_cadxp)
+      /* set pump density to allow it to compensate incoming currents */
+      pump_cadxp = -(ica+icaex_cadxp)/((1e3)*2*FARADAY*(k3_cadxp*aca - k4_cadxp*cao))
+      pumpca_cadxp = aca*pump_cadxp
+      printf("CA pump init: %g %g %g %g %g\n",aca,pump_cadxp,pumpca_cadxp,ica,icaex_cadxp)
+    }
+  }
+}
+
+//------------------------------------------------------------
+//*MODIFICATIONS TO DEFAULT.HOC
+//
+// Vars added here may not be handled properly within nrnoc.hoc
+//------------------------------------------------------------
+
+//** String defaults
+
+//** Simulation defaults
+
+long_dt     = .001      // msec 
+
+objref sfunc,tmpfile
+sfunc = new StringFunctions()   // needed to use is_name()
+tmpfile = new File()  // check for existence before opening a user's local.hoc file
+
+proc write_comment () {
+  tmpfile.aopen("index")
+  tmpfile.printf("%s\n",$s1)
+  tmpfile.close()  
+}
+
+func asin () { return atan($1/sqrt(1-$1*$1)) }
+func acos () { return atan(sqrt(1-$1*$1)/$1) }
+
+condor_run = 0  // define for compatability

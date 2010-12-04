@@ -1,0 +1,33 @@
+Note: This model only runs under UNIX (and linux) for the
+current version of neuron (5.2).  Future versions of neuron for the
+mac and pc will be able to run this model.
+
+* simulation from:
+Lytton WW. Computer model of clonazepam's effect in thalamic slice. 
+Neuroreport, 8:3339-3343, 1997. 
+Figs. 3 (Fig3.gif; reticularis cells) and 4 (Fig4.gif; thalamocortical cells), p 3342
+neurrep8:3339.pdf
+
+This simulation is very similar to the one published in the paper
+  but is not identical due to variations among randomizers using
+  supposedly identical algorithms.  The original was run under Sun
+  Solaris.  The example files included here were produced under
+  Intel Linux.  I have chosen traces from the current runs that are
+  very similar to those in the publication.  However, these specific
+  traces may not look identical if a different randomizer is used.
+  I also graph all 64 traces from the network so that they can all
+  be looked at and compared to the figure.
+
+* COMPILE and RUN:
+  nrnivmodl
+RUN: 
+  $CPU/special init.hoc -
+
+* TO JUST LOOK AT PRE-SAVED DATA
+  $CPU/special disp.hoc -
+
+to look at your newly run data later modify disp.hoc line 23 
+               FROM 
+showfiles("ctl.dat","czp.dat")
+                TO 
+showfiles("ctlnew.dat","czpnew.dat")

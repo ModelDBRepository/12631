@@ -1,0 +1,130 @@
+// $Id: network.hoc,v 1.58 1995/11/21 01:40:00 billl Exp $
+
+//* Create cells
+
+cols = 9
+objectvar col[cols]
+colre = 2  // num re cells in a column
+coltc = 5  // num tc cells in a column
+
+create nullseg
+nullseg v= -1000
+
+pre0 = 0
+prelist.remove_all  // clear the fixed lists if reloading
+for ii=0,cols-1 {
+  col[ii] = new COL(ii,colre,coltc,pre0)
+  pre0 = pre0 + colre + coltc
+}
+
+//** stimulation
+objectvar pg[2]
+nullseg pg[0] = new gen(0.5,-12)
+nullseg pg[1] = new gen(0.5,-13)
+
+//* Connectivity matrix
+dist = 3
+double pmat[2][2][2*dist+1]
+fseed(2312951)
+
+// tc -> re
+pmat[ftc()][fre()][dist] = 1
+pmat[ftc()][fre()][dist+1] = 0.67
+pmat[ftc()][fre()][dist-1] = 0.67
+pmat[ftc()][fre()][dist+2] = 0.34
+pmat[ftc()][fre()][dist-2] = 0.34
+pmat[ftc()][fre()][dist+3] = 0.15
+pmat[ftc()][fre()][dist-3] = 0.15
+// re -> tc
+pmat[fre()][ftc()][dist] = 1
+pmat[fre()][ftc()][dist+1] = 0.67
+pmat[fre()][ftc()][dist-1] = 0.67
+pmat[fre()][ftc()][dist+2] = 0.34
+pmat[fre()][ftc()][dist-2] = 0.34
+pmat[fre()][ftc()][dist+2] = 0.15
+pmat[fre()][ftc()][dist-2] = 0.15
+// re -> re
+pmat[fre()][fre()][dist] = 1.0
+pmat[fre()][fre()][dist+1] = 1.0
+pmat[fre()][fre()][dist-1] = 1.0
+pmat[fre()][fre()][dist+2] = 1.0
+pmat[fre()][fre()][dist-2] = 1.0
+pmat[fre()][fre()][dist+3] = 1.0
+pmat[fre()][fre()][dist-3] = 1.0
+
+func pmatsum () { local sum,i
+  sum = 0
+  for (i=0;i<2*dist+1;i=i+1) {
+    sum = sum + pmat[$1][$2][i]
+  }
+  return sum
+}
+
+//* set synapses
+// proc callback () { printf("%s %d %d %d\n",$o1,$2,$3,prelist.object($3).check) }
+CHAINLEN_GABAB1 = 5 // must be defined before doing init_arrays
+clearsyns()
+
+//** init arrays for all synapses
+for ii=0,cols-1 { // go through the columns
+//*** go through re cells
+  for jj=0,colre-1 {       
+    // total convergence
+    conv = int(2 + pmatsum(fre(),ftc())*coltc) // leave room for connects from tcs
+    col[ii].re[jj].excit.init_arrays(conv + 1) // and room for a stim as well
+    conv = int(1 + pmatsum(fre(),fre())*colre) // leave room for connects from res
+    col[ii].re[jj].inhib.init_arrays(conv + 1) // and room for a stim as well    
+  }
+//*** go through tc cells
+  for jj=0,coltc-1 {
+    // total convergence
+    conv = int(2 + pmatsum(ftc(),fre())*colre)
+    col[ii].tc[jj].inhib.init_arrays(conv+1)   // room for stim
+  }
+}
+
+//** Assigns synapses to re cells
+for ii=0,cols-1 { // go through the columns
+  lt = (ii - dist) % cols  // lt-most to connect
+  rt = (ii + dist) % cols  // rt-most to connect
+  for jj=0,colre-1 {       
+    mm = -1  // extra counter needed for cols since kk goes lt to rt
+    // loop starts on lt side and runs across to rt side
+    // WARNING: won't work with cols <= 2*dist + 1
+    for (kk=lt;kk != (rt+1)%cols;kk = (kk+1)%cols) {
+      mm = mm + 1
+//*** columnar convergence from tc
+      tmplist.remove_all 
+      col[kk].tcprelist(tmplist)  // list of tc's in the column
+      conv = int(pmat[fre()][ftc()][mm]*tmplist.count)  // how many to hook up
+      col[ii].re[jj].excit.conn(tmplist,conv,4)  // 4 hardwired !!
+//*** columnar convergence from neighboring re's
+      tmplist.remove_all 
+      col[kk].reprelist(tmplist) 
+      conv = int(pmat[fre()][fre()][mm]*tmplist.count)
+      col[ii].re[jj].inhib.conn(tmplist,conv,-1) // -1 maxdiv means ignore maxdiv
+    }
+//*** stimulation to re cells
+    col[ii].re[jj].ampa.setlink(pg[0].link)
+    col[ii].re[jj].gabaa.setlink(pg[0].link)
+    col[ii].re[jj].inj.setlink(pg[0].link)
+  }
+}
+
+//** Assigns synapses to tc cells
+for ii=0,cols-1 { // go through the columns
+  lt = (ii - dist) % cols  // lt-most to connect
+  rt = (ii + dist) % cols  // rt-most to connect
+  for jj=0,coltc-1 {
+    mm = -1
+    for (kk=lt;kk != (rt+1)%cols;kk = (kk+1)%cols) {
+      mm = mm + 1
+//** columnar convergence from re
+      tmplist.remove_all 
+      col[kk].reprelist(tmplist) 
+      conv = ranverge(pmat[ftc()][fre()][mm],tmplist.count,0) 
+      col[ii].tc[jj].inhib.conn(tmplist,conv,-1)
+    }
+  }
+}
+

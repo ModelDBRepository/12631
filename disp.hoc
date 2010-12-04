@@ -1,0 +1,24 @@
+// need to load Strings template ? from stdlib.hoc
+
+strdef simname, output_file, datestr, uname, comment, osname
+simname = "sim"
+runnum = 15
+datestr = "95jun03"
+output_file = "95jun03.01"
+uname = "i586"
+osname = "Linux"
+xwindows=1
+graph_flag = 0   // inhibit panel coming up
+
+xopen("nrnoc.hoc")
+xopen("simctrl.hoc")
+
+func cvode_local() { return 0 }
+load_file("snscode.hoc")
+load_file("snsgr.hoc")
+load_file("grvec.hoc")
+load_file("boxes.hoc")
+load_file("show.hoc")
+show_panel = 0
+
+showfiles("ctl.dat","czp.dat")

@@ -1,0 +1,148 @@
+// $Id: run.hoc,v 1.111 2002/07/27 04:12:39 billl Exp $ 
+
+proc showconn () {
+  mechlist(tmplist,"TC","gabaa")
+  connmat(tmplist,"pre",3,"inc",0,6,0,0,"TC.gabaa")
+  connmat(tmplist,"pre",4,"inc",0,6,0,0,"TC.gabaa")
+  connmat(tmplist,"pre",3,"post",3,6,0,0.2,"TC.gabaa")
+  mechlist(tmplist,"RE","ampa")
+  connmat(tmplist,"pre",3,"inc",0,6,1,0,"RE.ampa")
+  mechlist(tmplist,"RE","gabaa")
+  connmat(tmplist,"pre",2,"inc",0,6,1,0,"RE.gabaa")
+}
+
+proc initMisc1 () { 
+  fseed(seed)
+  forsec "TC" {
+    v = vrestTC + vrange*(2*u_rand() - 1) 
+  }
+  forsec "RE" {
+    v = vrestRE + vrange*(2*u_rand() - 1)
+  }
+  for ii=0,i<prelist.count-1 {  
+    prelist.object(ii).spk = 0
+  }
+}      
+
+func setother () { local iSum
+  if (ismembrane("cad")) {
+    kd_cad = cai*(-(cai * depth_cad *FARADAY) + cainf_cad * depth_cad * FARADAY - \
+                  5000*ica*taur_cad - depth_cad * FARADAY*kt_cad * taur_cad)
+    kd_cad = kd_cad/(cai*depth_cad*FARADAY - cainf_cad * depth_cad * FARADAY + \
+                     5000*ica*taur_cad)
+  }
+  iSum=0
+  // if (ismembrane("iar")) iSum += iother -- already included
+  if (ismembrane("ican")) iSum += in
+  return iSum
+}
+
+proc keepitems () { local cnt
+  cnt = $o1.count()
+  for (ii=cnt-1;ii>0;ii=ii-1) {
+    if (ii%$2 != 0) {$o1.remove(ii)}
+  }
+}
+
+proc finishMisc () { // put out final newline
+}
+      
+printlist.remove_all()  // clear it out
+printStep=0.2  // print out the spikes this often
+byte_store = 1
+tmplist = new List("RE")
+record(tmplist,"soma.v(0.5)")
+tmplist = new List("TC")
+record(tmplist,"soma.v(0.5)")
+
+proc printInit() {}
+print_flag = 0
+
+access col[0].tc[0].soma
+
+proc clearsec () {
+  forall { delete_section() }
+}
+
+// $s1 - the name of the syn
+// $2 - the number
+proc setdelays () {
+  tmplist = new List($s1)
+  for ii=0,tmplist.count-1 {
+    for jj=0,tmplist.object(ii).nsyn-1 {
+      tmplist.object(ii).delay(jj,$2)
+    }
+  }
+}
+
+// to be used after changing DELAY for a particular syn
+// $s1 - the name of the syn
+proc resetdelays () {
+  tmplist = new List($s1)
+  for ii=0,tmplist.count-1 {
+    for jj=0,tmplist.object(ii).nsyn-1 {
+      tmplist.object(ii).delay(jj,tmplist.object(ii).delay(jj))
+    }
+  }
+}
+
+objref autolist
+mechlist(autolist,"RE","gabaa")
+
+proc write_comment () {
+  sfunc.tail(output_file,"/",temp_string2_) // strip 'data/'
+  if (strcmp(simname,"neuron") != 0) {
+    sprint(temp_string2_,"%s/%s",simname,temp_string2_)
+  } else {
+    sprint(temp_string2_,"./%s",temp_string2_)
+  }
+  sprint($s1,"%s %s",temp_string2_,$s1)
+  nrn_write_index($s1)
+}
+    
+strdef codestr
+codestr = "CTL"
+codestr = "CZP"
+glpnum = 5
+double glp[glpnum]
+{glp[0]=20e-6 glp[1]=70e-6  glp[2]=140e-6  glp[3]=500e-6  glp[4]=5000-6 }
+
+proc rczp() { run1("CZP") }
+proc rctl() { run1("CTL") }
+proc run1() {
+  sprint(temp_string_,"%s.%02d",datestr,runnum-1)
+  if (sfunc.substr(comment,temp_string_) == -1) {comment=temp_string_}
+  if (sfunc.substr(comment,$s1) == -1) {sprint(comment,"%s (%s)",comment,$s1)}
+  if (strcmp($s1,"CZP")==0) {
+    Alpha_GABAA = 1/0.52
+    Beta_GABAA = 1/16.31    
+  } else if (strcmp($s1,"CTL")==0) {
+    Alpha_GABAA = 1/0.38
+    Beta_GABAA = 1/8.28
+  } else { printf("%s not recognized.\n",$s1) return }
+  run()
+}
+
+proc auto_run() { local ii,jj,kk
+  printf("begin auto_run\n")
+  for ii=0,glpnum-1 {
+    fseed(3454345)
+    for jj = 0,autolist.count-1 {
+      for kk = 0,autolist.object(jj).nsyn-1 {
+        if (strcmp(codestr,"CZP")==0) {
+          autolist.object(jj).gmax(kk,1.1*plmin(glp[ii],glp[ii]/5)) // 10% increment
+        } else {
+          autolist.object(jj).gmax(kk,plmin(glp[ii],glp[ii]/5))
+        }
+      }
+    }
+    run1(codestr) 
+    sprint(temp_string_,"%s:%g (%s Alpha_GABAA=1/%g)",autolist.object(jj-1),glp[ii],codestr,1/Alpha_GABAA)
+    pvall(temp_string_)
+    write_comment(temp_string_)
+    printf("%s %g\n",output_file,glp[ii])
+    runnum = runnum + 1
+  }  
+  printf("end auto_run\n")
+  update_emacs()
+}
