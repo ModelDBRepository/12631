@@ -31,3 +31,10 @@ to look at your newly run data later modify disp.hoc line 23
 showfiles("ctl.dat","czp.dat")
                 TO 
 showfiles("ctlnew.dat","czpnew.dat")
+
+20110411 changed euler solve method to cnexp in IAHP_destexhe.mod
+ICAN_destexhe.mod as per "Integration methods for SOLVE statements"
+topic in the NEURON forum
+http://www.neuron.yale.edu/phpBB/viewtopic.php?f=28&t=592
+-ModelDB Adminsitrator
+
