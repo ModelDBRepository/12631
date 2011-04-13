@@ -15,10 +15,4 @@ batch95nov29.01
 */
 
 strdef grep
-if (execute("load_file(\"disp.hoc\")") == 0) {
-	print "Try again with no -a option to grep (but still won't work on mac)"
-	grep = "grep"
-	showfiles("ctl.dat", "czp.dat")
-}
-
-
+load_file("disp.hoc")
