@@ -445,6 +445,7 @@ func read_vfile () { local flag, ii, sz, loc, mult, sze, cloc, segs
       return 0 }
     flag = 0
   } else flag = 1 // signifies that .file exists to use as key
+  tmpfile.seek(0) //  newly opened file redund. initial seek(0) for mswin compat
   while ((numr = tmpfile.scanstr(temp_string_)) != -1) {  // throw out the leading '//'
     // read the line
     cloc = tmpfile.tell - numr // location of the beginning of this line
