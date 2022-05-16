@@ -114,12 +114,12 @@ PROCEDURE init_arrays(num) {
 }
 
 VERBATIM
-static void hshake();
+static void hshake(SynS*, PreL*, int);
 ENDVERBATIM
 : 2 arguments - index, presyn link
 PROCEDURE setlink() {
 VERBATIM { 
-  int ii, x, new;
+  int ii, x, new_;
   SynS *sns;
   double ptemp;
   PreL *ppsyn;
@@ -146,17 +146,17 @@ VERBATIM {
     hoc_execerror("Invalid (changed) link.", 0); }
 
   if (x == nsyn) {
-    nsyn++;		/* a new entry */
-    new = 1;
+    nsyn++;		/* a new_ entry */
+    new_ = 1;
   } else { 
     /* should generate error if try to change something in middle of chain */
     if (sns->chainlen == -2) {
       hoc_execerror("Internal error: Index used must be multiple of CHAINLEN.", 0);
     }
-    new = 0; 
+    new_ = 0; 
   }
 
-  hshake(sns,ppsyn,new);
+  hshake(sns,ppsyn,new_);
 
   x *= (int)CHAINLEN;
   for (ii=x;ii < x + CHAINLEN;ii++) {
@@ -179,11 +179,9 @@ ENDVERBATIM
 
 : manipulate the presynaptic list remotely
 VERBATIM
-static void hshake(ss,pl,flag) 
 /* ls will be a pointer to presyn cell's array of pointers */
-SynS *ss;
-PreL *pl;
-int flag; /* flag == 1 if this is a brand new entry */
+/* flag == 1 if this is a brand new entry */
+static void hshake(SynS* ss, PreL* pl, int flag) 
 {
   int ii;
   double *nn;
@@ -324,7 +322,7 @@ FUNCTION pre() {
 	       *((PSTCAST[ii]).pcpre),
 	       QPRCAST->cpost);
 	if (x == -1 || &(PSTCAST[ii]) != *((PSTCAST[ii]).back)) {
-	  printf("\t\t%s: %x -> %x\n",
+	  printf("\t\t%s: %p -> %p\n",
 		 ((&(PSTCAST[ii])==*((PSTCAST[ii]).back))?"OK":"POINTER MISMATCH"),
 		 &(PSTCAST[ii]),
 		 (PSTCAST[ii]).back);
@@ -351,7 +349,7 @@ FUNCTION check() {
     for (ii=0; ii<nsyn*CHAINLEN && _lcheck==1.; ii+=CHAINLEN) {
       if (&(PSTCAST[ii]) != *((PSTCAST[ii]).back)) {
 	printf("****************************************************************\n");
-	printf("ERROR:: Index:%3d,C%09d,Pr%09d,Po%09d, Delay:%6g (%x->%x->%x)\n",
+	printf("ERROR:: Index:%3d,C%09d,Pr%09d,Po%09d, Delay:%6g (%p->%p->%p)\n",
 	       (PSTCAST[ii]).index,
 	       (PSTCAST[ii]).ucode,
 	       *((PSTCAST[ii]).pcpre),
@@ -395,7 +393,7 @@ PROCEDURE initq() {
 PROCEDURE popqh1(aug) { 
   VERBATIM {  
     if (QUECAST[(int)begsyn].time == 1e20) {
-      printf("%x %g %g ",QUECAST,newspk,qlen);
+      printf("%p %g %g ",QUECAST,newspk,qlen);
       hoc_execerror("Error: queue exhausted.\n",0);
     } else {  /* augment the time by Cdur */
       QUECAST[(int)begsyn].time += _laug;
