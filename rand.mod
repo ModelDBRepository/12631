@@ -109,7 +109,6 @@ VERBATIM
     static int iset = 0;
     static float gset;
     float fac, r , v1, v2;
-    double sqrt();
 
     if (iset == 0) {
         do {
