@@ -67,7 +67,7 @@ ASSIGNED {
 }
 
 BREAKPOINT {
-	SOLVE castate METHOD adams
+	SOLVE castate METHOD runge
 	carev = (1e3) * (R*(celsius+273.15))/(2*FARADAY) * log (cao/cai)
 	ica = gcabar * m*m*h * (v-carev)
 }
