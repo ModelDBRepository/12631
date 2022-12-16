@@ -46,3 +46,5 @@ Changelog
          (see https://github.com/ModelDBRepository/12631/pull/3 )
          passiv.mod: drop INDEPENDENT block for v
          Required for upcoming NEURON 9.0.0
+2023-04: Do not store pointers to RANGE variables.
+         Required for upcoming NEURON 9.0.0.

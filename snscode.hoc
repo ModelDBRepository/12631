@@ -382,7 +382,7 @@ begintemplate POSTSYN
       }
       for k=0,mech_num-1 {
         // post, pre, listcnt, syncnt, mechcnt, precnt
-        mech[k].setlink($o1.object(rannum).link)
+        mech[k].setlink($o1.object(rannum).link, $o1.object(rannum).nsyn, $o1.object(rannum).maxsyn)
         if (setall) {
           mech[k].delay(-1,delay) // set most recent (index nsyn-1)
           mech[k].gmax(-1,gmax)

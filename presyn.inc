@@ -21,8 +21,6 @@ CONSTRUCTOR {
     /* link allows postsyn cell to manipulate presyn list */
     link = (double)((unsigned long)ecalloc(1, sizeof(PreL))); 
     PRECAST->link2  = link;  /* this can be queried to protect against error */
-    PRECAST->nnpre = &nsyn;
-    PRECAST->mxpre = &maxsyn;
     nsyn = 0.;
     maxsyn = 0.;
     if (ifarg(2)) { 
