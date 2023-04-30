@@ -105,9 +105,9 @@ for ii=0,cols-1 { // go through the columns
       col[ii].re[jj].inhib.conn(tmplist,conv,-1) // -1 maxdiv means ignore maxdiv
     }
 //*** stimulation to re cells
-    col[ii].re[jj].ampa.setlink(pg[0].link)
-    col[ii].re[jj].gabaa.setlink(pg[0].link)
-    col[ii].re[jj].inj.setlink(pg[0].link)
+    col[ii].re[jj].ampa.setlink(pg[0].link, pg[0].nsyn, pg[0].maxsyn)
+    col[ii].re[jj].gabaa.setlink(pg[0].link, pg[0].nsyn, pg[0].maxsyn)
+    col[ii].re[jj].inj.setlink(pg[0].link, pg[0].nsyn, pg[0].maxsyn)
   }
 }
 

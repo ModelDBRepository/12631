@@ -51,8 +51,6 @@ typedef struct SynS { /* postsynaptic structure */
 typedef struct PreL {
   int cpre;   /* user code for info about presyn cell */
   struct SynS **plst;        /* will point to post for postsyn nrn*/
-  double *nnpre;     /* number of pointers currently there */
-  double *mxpre;     /* number permitted before realloc required */
   double link2;       /* a copy of the link information to confirm correct hook up */
 } PreL;
 
